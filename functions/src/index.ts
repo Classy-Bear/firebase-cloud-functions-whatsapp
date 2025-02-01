@@ -9,8 +9,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { Twilio } from 'twilio';
-import express from 'express';
-import * as bodyParser from 'body-parser';
 import * as logger from 'firebase-functions/logger';
 import * as dotenv from 'dotenv';
 
@@ -23,11 +21,6 @@ dotenv.config();
 
 // Initialize Firebase Admin
 admin.initializeApp();
-
-// Initialize Express app
-const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
 
 // Initialize Twilio client
 const twilioClient = new Twilio(
@@ -53,8 +46,7 @@ export const onMessageReceived = functions.https.onRequest(async (req, res) => {
         logger.error('Error processing message:', error);
         res.status(500).send('Error processing message');
     }
-}
-);
+});
 
 // Function to send WhatsApp messages
 export const sendMessage = functions.https.onRequest(async (req, res) => {
@@ -84,6 +76,38 @@ export const sendMessage = functions.https.onRequest(async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Error sending message via Twilio'
+        });
+    }
+});
+
+// Function to send files via WhatsApp
+export const sendFile = functions.https.onRequest(async (req, res) => {
+    const { to, fileUrl } = req.body;
+
+    if (!to || !fileUrl) {
+        res.status(400).json({
+            success: false,
+            error: 'The request must include "to" and "fileUrl" fields'
+        });
+        return;
+    }
+
+    try {
+        const response = await twilioClient.messages.create({
+            mediaUrl: [fileUrl],
+            from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+            to: `whatsapp:${to}`
+        });
+
+        res.status(200).json({
+            success: true,
+            messageId: response.sid
+        });
+    } catch (error) {
+        logger.error('Error sending file:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error sending file via Twilio'
         });
     }
 });

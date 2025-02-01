@@ -80,6 +80,31 @@ Response format:
 }
 ```
 
+### Sending Files
+
+To send a file via WhatsApp, make a POST request to the `sendFile` endpoint:
+
+```bash
+curl -X POST https://YOUR_FIREBASE_PROJECT.cloudfunctions.net/sendFile \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "+1234567890",
+    "fileUrl": "https://example.com/path/to/file.pdf"
+  }'
+```
+
+The request body must include:
+- `to`: The recipient's phone number
+- `fileUrl`: A publicly accessible URL to the file you want to send
+
+Response format:
+```json
+{
+  "success": true,
+  "messageId": "SM123..." // Twilio message SID
+}
+```
+
 ## Error Handling
 
 The application includes comprehensive error handling:
